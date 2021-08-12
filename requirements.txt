@@ -1,6 +1,6 @@
 scipy
 sounddevice
 numpy
-tkinter
+dash
 queue
 threading

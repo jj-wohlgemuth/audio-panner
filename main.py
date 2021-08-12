@@ -1,8 +1,10 @@
 import numpy as np
-import tkinter as tk
 import threading
 import sounddevice as sd
 import scipy.io.wavfile as wavf
+import dash
+import dash_html_components as html
+import dash_core_components as dcc
 
 audiodevice = 35 #python -m sounddevice
 path_to_audio = "test_audio.wav"
@@ -12,6 +14,7 @@ end_idx   = 0
 end = threading.Event()
 end.clear()
 angle = .0
+external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
 def audio_callback(indata, outdata, frames, time, status):
     global start_idx
@@ -35,23 +38,32 @@ stream = sd.Stream(callback=audio_callback,
                    channels=2,
                    samplerate=int(fs_hz))
 
-def change_panorama(set_angle_deg):
+def change_panorama(set_angle_deg, n_clicks):
     global angle
+    if n_clicks > 0:
+        stream.start()
     angle = ((float(set_angle_deg)+45)/180)*np.pi
 
-with stream:
-    window = tk.Tk()
-    window.title('audio-panner')
-    window.geometry("400x100")
 
-    scale = tk.Scale(window,
-                     from_=-45,
-                     to=45,
-                     length=380,
-                     orient=tk.HORIZONTAL,
-                     command=change_panorama)
-    scale.set(0)
-    scale.pack()
+app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+app.layout = html.Div([
+                        dcc.Slider(
+                            id='slider',
+                            min=-45,
+                            max=45,
+                            step=0.5,
+                            value=0,
+                        ),
+                        html.Div(id='slider-output-container'),
+                        html.Button('Play', id='play-val', n_clicks=0),
+                        ])
 
 
-    window.mainloop()
+@app.callback(
+    dash.dependencies.Output('slider-output-container', 'children'),
+    [dash.dependencies.Input('slider', 'value'),
+     dash.dependencies.Input('play-val', 'n_clicks')])
+def update_output(value, n_clicks):
+    change_panorama(value, n_clicks)
+
+app.run_server(debug=True)
