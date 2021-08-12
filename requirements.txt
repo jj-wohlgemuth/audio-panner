@@ -1,0 +1,6 @@
+scipy
+sounddevice
+numpy
+tkinter
+queue
+threading
